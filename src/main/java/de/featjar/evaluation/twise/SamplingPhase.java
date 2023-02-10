@@ -134,10 +134,10 @@ public class SamplingPhase implements EvaluationPhase {
                             try {
                                 result = processRunner.run(algorithm);
                                 dataWriter.writeLine();
-                                IO.save(
-                                        result.getResult(),
-                                        tWiseEvaluator.outputPath.resolve(sampleFileName),
-                                        sampleFormat);
+                                final SolutionList sample = result.getResult();
+                                if (sample != null) {
+                                    IO.save(sample, tWiseEvaluator.outputPath.resolve(sampleFileName), sampleFormat);
+                                }
                             } catch (final Exception e) {
                                 Logger.logError("Could not save sample file " + sampleFileName);
                                 Logger.logError(e);
@@ -321,7 +321,8 @@ public class SamplingPhase implements EvaluationPhase {
         dataCSVWriter.addValue(result.isTerminatedInTime());
         dataCSVWriter.addValue(result.isNoError());
         dataCSVWriter.addValue(result.getTime());
-        dataCSVWriter.addValue(result.getResult().getSolutions().size());
+        SolutionList sample = result.getResult();
+        dataCSVWriter.addValue(sample != null ? sample.getSolutions().size() : 0);
     }
 
     private void logRun() {
