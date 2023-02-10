@@ -1,6 +1,5 @@
 .classpath
 .project
-*.jar
 .gradle/
 .settings/
 bin/
