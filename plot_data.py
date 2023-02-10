@@ -50,17 +50,17 @@ df_all = df_all[df_all['InTime'] == True]
 df_all = df_all[df_all['Success'] == True]
 df_all = df_all.drop(['AlgorithmIteration', 'InTime', 'Success'], axis=1)
 
+df_all = df_all[df_all['AlgorithmID'] != 0]
 
 # Join Model Names & Filter by Model
 key = ['ModelID']
 df_all = df_all.join(df_models.set_index(key), on=key, rsuffix="_model")
-df_all = df_all[df_all['#Varaiables'] > 1000]
-df_all = df_all.drop(['Name', '#Varaiables', '#Clauses'], axis=1)
+df_all = df_all[df_all['#Variables'] > 100]
+df_all = df_all.drop(['Name', '#Variables', '#Clauses'], axis=1)
 
 # Median of Algorithm Iterations
 df_all = df_all.groupby(['ModelID', 'AlgorithmID', 'SystemIteration']).agg({'Time': 'median', 'SampleSize': 'median'})
 df_all = df_all.reset_index()
-
 
 algo_gr = df_all[df_all['AlgorithmID'] == 1]
 algo_gr = algo_gr[['ModelID', 'SystemIteration', 'SampleSize', 'Time']]
