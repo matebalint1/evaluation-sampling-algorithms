@@ -30,7 +30,7 @@ public class ACTS_IPOG_FT extends AACTSSampling {
 
     @Override
     public String getName() {
-        return "ACTS-IPOG";
+        return "ACTS-IPOG-FT";
     }
 
     @Override

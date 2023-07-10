@@ -30,7 +30,7 @@ public class ACTS_IPOG_CSP extends AACTSSampling {
 
     @Override
     public String getName() {
-        return "ACTS-IPOG";
+        return "ACTS-IPOG-CSP";
     }
 
     @Override

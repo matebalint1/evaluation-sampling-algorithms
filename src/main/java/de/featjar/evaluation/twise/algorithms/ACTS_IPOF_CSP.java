@@ -30,7 +30,7 @@ public class ACTS_IPOF_CSP extends AACTSSampling {
 
     @Override
     public String getName() {
-        return "ACTS-IPOF";
+        return "ACTS-IPOF-CSP";
     }
 
     @Override
