@@ -87,37 +87,49 @@ public class CoverageTestingPhase implements EvaluationPhase {
                         evaluator.systemIteration++) {
 
                     readModel();
-                    TWiseConfigurationUtil util = new TWiseConfigurationUtil(modelCNF, new Sat4JSolver(modelCNF));
-                    TWiseStatisticGenerator gen = new TWiseStatisticGenerator(util);
+                    if (modelCNF != null) {
+                        TWiseConfigurationUtil util = new TWiseConfigurationUtil(modelCNF, new Sat4JSolver(modelCNF));
+                        TWiseStatisticGenerator gen = new TWiseStatisticGenerator(util);
 
-                    algorithmIndex = -1;
-                    for (final String algorithmName : tWiseEvaluator.algorithmsProperty.getValue()) {
-                        for (final Integer tValue : tWiseEvaluator.tProperty.getValue()) {
-                            algorithmIndex++;
-                            for (algorithmIteration = 1;
-                                    algorithmIteration <= tWiseEvaluator.algorithmIterations.getValue();
-                                    algorithmIteration++) {
+                        algorithmIndex = -1;
+                        for (final String algorithmName : tWiseEvaluator.algorithmsProperty.getValue()) {
+                            for (final Integer tValue : tWiseEvaluator.tProperty.getValue()) {
+                                algorithmIndex++;
+                                for (algorithmIteration = 1;
+                                        algorithmIteration <= tWiseEvaluator.algorithmIterations.getValue();
+                                        algorithmIteration++) {
 
-                                evaluator.tabFormatter.setTabLevel(2);
-                                logRun();
-                                evaluator.tabFormatter.setTabLevel(3);
+                                    evaluator.tabFormatter.setTabLevel(2);
+                                    logRun();
+                                    evaluator.tabFormatter.setTabLevel(3);
 
-                                String sampleFileName = tWiseEvaluator.getSystemID() + "_"
-                                        + tWiseEvaluator.systemIteration + "_" + algorithmIndex + "_"
-                                        + algorithmIteration + "_sample." + sampleFormat.getFileExtension();
+                                    String sampleFileName = tWiseEvaluator.getSystemID() + "_"
+                                            + tWiseEvaluator.systemIteration + "_" + algorithmIndex + "_"
+                                            + algorithmIteration + "_sample." + sampleFormat.getFileExtension();
 
-                                SolutionList sample = IO.load(
-                                                tWiseEvaluator.outputPath.resolve(sampleFileName), sampleFormat)
-                                        .orElse(Logger::logProblems);
-                                List<List<LiteralList>> samples = List.of(sample.getSolutions());
-                                validity = gen.getValidity(samples).get(0);
-                                List<List<LiteralList>> literals = de.featjar.analysis.sat4j.twise.YASA.convertLiterals(
-                                        Clauses.getLiterals(sample.getVariableMap()));
-                                coverageStatistic = gen.getCoverage(
-                                                samples, List.of(literals), tValue, ConfigurationScore.NONE, true)
-                                        .get(0);
+                                    SolutionList sample = IO.load(
+                                                    tWiseEvaluator.outputPath.resolve(sampleFileName), sampleFormat)
+                                            .orElse(Logger::logProblems);
+                                    if (sample != null) {
+                                        List<List<LiteralList>> samples = List.of(sample.getSolutions());
+                                        validity = gen.getValidity(samples).get(0);
+                                        List<List<LiteralList>> literals =
+                                                de.featjar.analysis.sat4j.twise.YASA.convertLiterals(
+                                                        Clauses.getLiterals(sample.getVariableMap()));
+                                        coverageStatistic = gen.getCoverage(
+                                                        samples,
+                                                        List.of(literals),
+                                                        tValue,
+                                                        ConfigurationScore.NONE,
+                                                        true)
+                                                .get(0);
+                                    } else {
+                                        validity = null;
+                                        coverageStatistic = null;
+                                    }
 
-                                dataWriter.writeLine();
+                                    dataWriter.writeLine();
+                                }
                             }
                         }
                     }
@@ -141,10 +153,10 @@ public class CoverageTestingPhase implements EvaluationPhase {
         dataCSVWriter.addValue(algorithmIndex);
         dataCSVWriter.addValue(tWiseEvaluator.systemIteration);
         dataCSVWriter.addValue(algorithmIteration);
-        dataCSVWriter.addValue(validity.getValidInvalidRatio());
-        dataCSVWriter.addValue(coverageStatistic.getCoverage());
-        dataCSVWriter.addValue(coverageStatistic.getNumberOfUncoveredConditions());
-        dataCSVWriter.addValue(coverageStatistic.getNumberOfInvalidConditions());
+        dataCSVWriter.addValue(validity != null ? validity.getValidInvalidRatio() : -1);
+        dataCSVWriter.addValue(coverageStatistic != null ? coverageStatistic.getCoverage() : -1);
+        dataCSVWriter.addValue(coverageStatistic != null ? coverageStatistic.getNumberOfUncoveredConditions() : -1);
+        dataCSVWriter.addValue(coverageStatistic != null ? coverageStatistic.getNumberOfInvalidConditions() : -1);
     }
 
     private void logRun() {
