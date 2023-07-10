@@ -29,6 +29,12 @@ import de.featjar.evaluation.Evaluator;
 import de.featjar.evaluation.process.Algorithm;
 import de.featjar.evaluation.process.ProcessRunner;
 import de.featjar.evaluation.process.Result;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOF2;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOF_CSP;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOF_FT;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOGD;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOG_CSP;
+import de.featjar.evaluation.twise.algorithms.ACTS_IPOG_FT;
 import de.featjar.evaluation.twise.algorithms.Dummy;
 import de.featjar.evaluation.twise.algorithms.FIDEChvatal;
 import de.featjar.evaluation.twise.algorithms.FIDEICPL;
@@ -185,6 +191,30 @@ public class SamplingPhase implements EvaluationPhase {
                 switch (algorithmName) {
                     case "DUMMY": {
                         algorithmList.add(new Dummy());
+                        break;
+                    }
+                    case "IPOG_FT": {
+                        algorithmList.add(new ACTS_IPOG_FT(tValue, sampleFile, modelFile));
+                        break;
+                    }
+                    case "IPOG_CSP": {
+                        algorithmList.add(new ACTS_IPOG_CSP(tValue, sampleFile, modelFile));
+                        break;
+                    }
+                    case "IPOG_D": {
+                        algorithmList.add(new ACTS_IPOGD(tValue, sampleFile, modelFile));
+                        break;
+                    }
+                    case "IPOF_FT": {
+                        algorithmList.add(new ACTS_IPOF_FT(tValue, sampleFile, modelFile));
+                        break;
+                    }
+                    case "IPOF_CSP": {
+                        algorithmList.add(new ACTS_IPOF_CSP(tValue, sampleFile, modelFile));
+                        break;
+                    }
+                    case "IPOF2": {
+                        algorithmList.add(new ACTS_IPOF2(tValue, sampleFile, modelFile));
                         break;
                     }
                     case "IC": {

@@ -5,5 +5,6 @@
 	</point>
 	<point id="de.featjar.evaluation.EvaluationPhaseExtensionPoint">
 	    <extension id="de.featjar.evaluation.twise.SamplingPhase" />
+	    <extension id="de.featjar.evaluation.twise.CoverageTestingPhase" />
 	</point>
 </extensions>
