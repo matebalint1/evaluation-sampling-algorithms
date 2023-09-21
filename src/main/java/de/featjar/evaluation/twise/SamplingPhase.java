@@ -46,14 +46,13 @@ import de.featjar.formula.ModelRepresentation;
 import de.featjar.formula.io.FormulaFormatManager;
 import de.featjar.formula.io.dimacs.DIMACSFormatCNF;
 import de.featjar.formula.structure.Formula;
+import de.featjar.formula.structure.atomic.literal.VariableMap;
 import de.featjar.util.io.IO;
 import de.featjar.util.io.csv.CSVWriter;
 import de.featjar.util.logging.Logger;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * @author Sebastian Krieter
@@ -65,17 +64,23 @@ public class SamplingPhase implements EvaluationPhase {
 
     private List<Algorithm<SolutionList>> algorithmList;
 
-    private CSVWriter dataWriter, modelWriter, algorithmWriter;
+    private CSVWriter featureGroupWriter, dataWriter, modelWriter, algorithmWriter;
     private int algorithmIndex, algorithmIteration;
     private Result<SolutionList> result;
     private CNF modelCNF;
 
     private TWiseSampleEvaluator tWiseEvaluator;
 
+    final int numOfFeatureGroups = 10;
+    final int maxMemberships = 3;
+    List<String>[] featureGroups = new List[numOfFeatureGroups];
+    HashMap<String, HashSet<Integer>> featureGroupMap = new HashMap<>();
+
     @Override
     public void run(Evaluator evaluator) {
         tWiseEvaluator = (TWiseSampleEvaluator) evaluator;
 
+        featureGroupWriter = evaluator.addCSVWriter("feature_groups.csv", "Feature group", "Features");
         modelWriter = evaluator.addCSVWriter("models.csv", "ModelID", "Name", "#Variables", "#Clauses");
         algorithmWriter = evaluator.addCSVWriter("algorithms.csv", "AlgorithmID", "Name", "Settings");
         dataWriter = evaluator.addCSVWriter(
@@ -89,12 +94,14 @@ public class SamplingPhase implements EvaluationPhase {
                 "Time",
                 "SampleSize");
 
+        featureGroupWriter.setLineWriter(this::writeFeatureGroups);
         modelWriter.setLineWriter(this::writeModel);
         algorithmWriter.setLineWriter(this::writeAlgorithm);
         dataWriter.setLineWriter(this::writeData);
 
         final ModelReader<Formula> mr = new ModelReader<>();
         mr.setPathToFiles(tWiseEvaluator.modelPath);
+//        Logger.logInfo("modelPath: " + tWiseEvaluator.modelPath);
         mr.setFormatSupplier(FormulaFormatManager.getInstance());
 
         if (evaluator.systemIterations.getValue() > 0) {
@@ -165,6 +172,13 @@ public class SamplingPhase implements EvaluationPhase {
                 .map(ModelRepresentation::new)
                 .map(m -> m.get(CNFProvider.fromFormula()))
                 .orElse(Logger::logProblems);
+
+
+        createFeatureGroupMap();
+        updateFeatureGroupAttributes();
+        featureGroupWriter.writeLine();
+        logCNF();
+
         if (modelCNF == null) {
             Logger.logError("Could not read file " + tWiseEvaluator.getSystemName());
             return false;
@@ -329,6 +343,61 @@ public class SamplingPhase implements EvaluationPhase {
         return true;
     }
 
+    protected void createFeatureGroupMap() {
+        List<String> variableNames = modelCNF.getVariableMap().getVariableNames();
+        Random rnd = new Random();
+
+        for (String variableName : variableNames) {
+            int numOfMemberships = rnd.nextInt(maxMemberships) + 1;
+            HashSet<Integer> memberships = new HashSet<>();
+
+
+            for (int i = 0; i < numOfMemberships; i++) {
+                int randomValue = rnd.nextInt(numOfFeatureGroups) + 1;
+                memberships.add(randomValue);
+            }
+
+            featureGroupMap.put(variableName, memberships);
+        }
+    }
+
+    protected void updateFeatureGroupAttributes() {
+        for (String variableName : featureGroupMap.keySet()) {
+            Optional<VariableMap.Variable> var = modelCNF.getVariableMap().getVariable(variableName);
+
+            if(var.isEmpty())  { throw new IllegalArgumentException("Invalid variableName: " + variableName);}
+
+            var.get().setFeatureGroups(featureGroupMap.get(variableName));
+        }
+    }
+
+    protected void writeFeatureGroups(CSVWriter featureGroupWriter) {
+        createFeatureGroupArrays();
+        for (int i = 0; i < numOfFeatureGroups; i++) {
+            featureGroupWriter.addValue(i + 1);
+
+            for (String featureLabel : featureGroups[i]) {
+                featureGroupWriter.addValue(featureLabel);
+            }
+            featureGroupWriter.createNewLine();
+        }
+    }
+
+    protected void createFeatureGroupArrays() {
+        for (int i = 0; i < numOfFeatureGroups; i++) {
+            featureGroups[i] = new ArrayList<>();
+        }
+
+        for (String variableName : featureGroupMap.keySet()) {
+            for (int group : featureGroupMap.get(variableName)) {
+                if (group < 1 || group > featureGroups.length) {
+                    throw new IllegalArgumentException("Invalid group number: " + group);
+                }
+                featureGroups[group - 1].add(variableName);
+            }
+        }
+    }
+
     protected void writeModel(CSVWriter modelCSVWriter) {
         modelCSVWriter.addValue(tWiseEvaluator.getSystemID());
         modelCSVWriter.addValue(tWiseEvaluator.getSystemName());
@@ -377,5 +446,17 @@ public class SamplingPhase implements EvaluationPhase {
         sb.append("/");
         sb.append(algorithmList.get(algorithmIndex).getIterations());
         Logger.logInfo(sb.toString());
+    }
+
+    private void logCNF() {
+        Logger.logInfo("modelCNF: " + modelCNF);
+
+        Logger.logInfo("modelCNF.getVariableMap().getVariableCount(): " + modelCNF.getVariableMap().getVariableCount());
+        Logger.logInfo("modelCNF.getVariableMap().getVariableNames(): " + modelCNF.getVariableMap().getVariableNames());
+        Logger.logInfo("modelCNF.getVariableMap().getConstantCount(): " + modelCNF.getVariableMap().getConstantCount());
+        Logger.logInfo("modelCNF.getVariableMap().getConstantNames(): " + modelCNF.getVariableMap().getConstantNames());
+
+        Logger.logInfo("modelCNF.getVariableMap().getVariable(1): " + modelCNF.getVariableMap().getVariable(1));
+        Logger.logInfo("modelCNF.getVariableMap().getVariable(2): " + modelCNF.getVariableMap().getVariable(2));
     }
 }

@@ -3,7 +3,8 @@
 .gradle/
 .settings/
 bin/
-config*/
 results/
 build/
 data/
+models/
+
